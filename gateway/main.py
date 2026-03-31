@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Body
+from fastapi.responses import JSONResponse, Response
 import httpx
 from typing import Any
 
@@ -32,9 +32,21 @@ async def forward_request(service: str, path: str, method: str, **kwargs) -> Any
             else:
                 raise HTTPException(status_code=405, detail="Method not allowed")
 
-            return JSONResponse(
-                content=response.json() if response.text else None,
-                status_code=response.status_code
+            if response.status_code == 204:
+                return Response(status_code=204)
+
+            content_type = response.headers.get("content-type", "")
+
+            if "application/json" in content_type:
+                return JSONResponse(
+                    content=response.json(),
+                    status_code=response.status_code
+                )
+
+            return Response(
+                content=response.text,
+                status_code=response.status_code,
+                media_type=content_type or "text/plain"
             )
 
         except httpx.RequestError as e:
@@ -61,15 +73,13 @@ async def get_patient(patient_id: int):
 
 
 @app.post("/gateway/patients")
-async def create_patient(request: Request):
-    body = await request.json()
-    return await forward_request("patient", "/api/patients", "POST", json=body)
+async def create_patient(payload: dict = Body(...)):
+    return await forward_request("patient", "/api/patients", "POST", json=payload)
 
 
 @app.put("/gateway/patients/{patient_id}")
-async def update_patient(patient_id: int, request: Request):
-    body = await request.json()
-    return await forward_request("patient", f"/api/patients/{patient_id}", "PUT", json=body)
+async def update_patient(patient_id: int, payload: dict = Body(...)):
+    return await forward_request("patient", f"/api/patients/{patient_id}", "PUT", json=payload)
 
 
 @app.delete("/gateway/patients/{patient_id}")
@@ -89,15 +99,13 @@ async def get_doctor(doctor_id: int):
 
 
 @app.post("/gateway/doctors")
-async def create_doctor(request: Request):
-    body = await request.json()
-    return await forward_request("doctor", "/api/doctors", "POST", json=body)
+async def create_doctor(payload: dict = Body(...)):
+    return await forward_request("doctor", "/api/doctors", "POST", json=payload)
 
 
 @app.put("/gateway/doctors/{doctor_id}")
-async def update_doctor(doctor_id: int, request: Request):
-    body = await request.json()
-    return await forward_request("doctor", f"/api/doctors/{doctor_id}", "PUT", json=body)
+async def update_doctor(doctor_id: int, payload: dict = Body(...)):
+    return await forward_request("doctor", f"/api/doctors/{doctor_id}", "PUT", json=payload)
 
 
 @app.delete("/gateway/doctors/{doctor_id}")
@@ -117,15 +125,13 @@ async def get_appointment(appointment_id: int):
 
 
 @app.post("/gateway/appointments")
-async def create_appointment(request: Request):
-    body = await request.json()
-    return await forward_request("appointment", "/api/appointments", "POST", json=body)
+async def create_appointment(payload: dict = Body(...)):
+    return await forward_request("appointment", "/api/appointments", "POST", json=payload)
 
 
 @app.put("/gateway/appointments/{appointment_id}")
-async def update_appointment(appointment_id: int, request: Request):
-    body = await request.json()
-    return await forward_request("appointment", f"/api/appointments/{appointment_id}", "PUT", json=body)
+async def update_appointment(appointment_id: int, payload: dict = Body(...)):
+    return await forward_request("appointment", f"/api/appointments/{appointment_id}", "PUT", json=payload)
 
 
 @app.delete("/gateway/appointments/{appointment_id}")
@@ -145,15 +151,13 @@ async def get_feedback(feedback_id: int):
 
 
 @app.post("/gateway/feedbacks")
-async def create_feedback(request: Request):
-    body = await request.json()
-    return await forward_request("feedback", "/api/feedbacks", "POST", json=body)
+async def create_feedback(payload: dict = Body(...)):
+    return await forward_request("feedback", "/api/feedbacks", "POST", json=payload)
 
 
 @app.put("/gateway/feedbacks/{feedback_id}")
-async def update_feedback(feedback_id: int, request: Request):
-    body = await request.json()
-    return await forward_request("feedback", f"/api/feedbacks/{feedback_id}", "PUT", json=body)
+async def update_feedback(feedback_id: int, payload: dict = Body(...)):
+    return await forward_request("feedback", f"/api/feedbacks/{feedback_id}", "PUT", json=payload)
 
 
 @app.delete("/gateway/feedbacks/{feedback_id}")
